@@ -1,5 +1,8 @@
 "use client"
-
+import { initializeApp } from "firebase/app"
+import { getAuth, createUserWithEmailAndPassword, signInWithPopup, GoogleAuthProvider } from "firebase/auth"
+import { getFirestore } from "firebase/firestore"
+import { getStorage } from "firebase/storage"
 import * as React from "react"
 import * as AvatarPrimitive from "@radix-ui/react-avatar"
 

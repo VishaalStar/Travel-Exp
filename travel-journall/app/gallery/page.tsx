@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { FaHeart, FaTimes } from "react-icons/fa"; 
+import { FaHeart, FaTimes, FaComment } from "react-icons/fa"; 
 import { 
   Carousel,
   CarouselContent,
@@ -9,8 +9,30 @@ import {
   CarouselNext,
   CarouselPrevious,
 } from "@/components/ui/carousel";
+import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
 
-// Sample posts with multiple photos for each
+// Extended sample post type with comments
+type Comment = {
+  id: number;
+  text: string;
+  author: string;
+  timestamp: string;
+};
+
+type Post = {
+  id: number;
+  title: string;
+  country: string;
+  state: string;
+  city: string;
+  description: string;
+  photos: { url: string }[];
+  likes: number;
+  comments: Comment[];
+};
+
+// Sample posts with comments added
 const samplePosts = [
   {
     id: 1,
@@ -23,8 +45,12 @@ const samplePosts = [
     photos: [
       { url: "https://images.pexels.com/photos/30415153/pexels-photo-30415153/free-photo-of-tranquil-nyc-skyline-at-twilight.jpeg?auto=compress&cs=tinysrgb&w=600" },
       { url: "https://www.birlatrimayaa.in/images/birla/about-bangalore.webp" },
-      { url: "https://images.pexels.com/photos/739987/pexels-photo-739987.jpeg?cs=srgb&dl=pexels-vivek-chugh-157138-739987.jpg&fm=jpg" } ],
+      { url: "https://images.pexels.com/photos/739987/pexels-photo-739987.jpeg?cs=srgb&dl=pexels-vivek-chugh-157138-739987.jpg&fm=jpg" }
+    ],
     likes: 2000,
+    comments: [
+      { id: 1, text: "Beautiful city!", author: "John", timestamp: "2024-01-30 10:00" }
+    ],
   },
   {
     id: 2,
@@ -34,12 +60,13 @@ const samplePosts = [
     city: "Kathmandu",
     description:
       "A thrilling trek to the Himalayan mountains. This journey includes climbing, camping under the stars, and visiting some of the most remote villages in Nepal. It will take you to new heights of adventure and wonder. The views are breathtaking, and the experience is unforgettable. It's a must-do for any adventure enthusiast.",
-      photos: [
-        { url: "https://cdn.kimkim.com/files/a/images/4953d217876a02cf0f7d7299f2363dad36606ee1/big-a03997e39a2ceffc2ff018975907d3bc.jpg" },
-        { url: "https://upload.wikimedia.org/wikipedia/commons/d/d1/Mount_Everest_as_seen_from_Drukair2.jpg" },
-        { url: "https://www.intrepidtravel.com/adventures/wp-content/uploads/2018/06/Intrepid-Travel-nepal_annapurna_himalaya_culture_buddhism_prayer-flags_mountains.jpg" }
-      ],
-      likes: 120,
+    photos: [
+      { url: "https://cdn.kimkim.com/files/a/images/4953d217876a02cf0f7d7299f2363dad36606ee1/big-a03997e39a2ceffc2ff018975907d3bc.jpg" },
+      { url: "https://upload.wikimedia.org/wikipedia/commons/d/d1/Mount_Everest_as_seen_from_Drukair2.jpg" },
+      { url: "https://www.intrepidtravel.com/adventures/wp-content/uploads/2018/06/Intrepid-Travel-nepal_annapurna_himalaya_culture_buddhism_prayer-flags_mountains.jpg" }
+    ],
+    likes: 120,
+    comments: [],
   },
   {
     id: 3,
@@ -55,6 +82,7 @@ const samplePosts = [
       { url: "https://media.timeout.com/images/105237178/image.jpg" }
     ],
     likes: 85,
+    comments: [],
   },
   {
     id: 4,
@@ -70,6 +98,7 @@ const samplePosts = [
       { url: "https://media.tacdn.com/media/attractions-splice-spp-674x446/07/3d/9f/2c.jpg" }
     ],
     likes: 95,
+    comments: [],
   },
   {
     id: 5,
@@ -85,13 +114,16 @@ const samplePosts = [
       { url: "https://upload.wikimedia.org/wikipedia/commons/3/3f/Krabi_Ao_Nang_Beach.jpg" }
     ],
     likes: 150,
+    comments: [],
   },
 ];
 
 export default function Gallery() {
-  const [posts, setPosts] = useState<any[]>([]); 
-  const [expandedPost, setExpandedPost] = useState<any | null>(null);
+  const [posts, setPosts] = useState<Post[]>([]); 
+  const [expandedPost, setExpandedPost] = useState<Post | null>(null);
   const [showPhotoModal, setShowPhotoModal] = useState(false);
+  const [newComment, setNewComment] = useState("");
+  const [showComments, setShowComments] = useState<{ [key: number]: boolean }>({});
   const token = process.env.NEXT_PUBLIC_API_TOKEN;
 
   useEffect(() => {
@@ -123,7 +155,46 @@ export default function Gallery() {
     }).catch((error) => console.error("Error updating like:", error));
   };
 
-  const toggleExpandPost = (post: any) => {
+  const toggleComments = (postId: number, e: React.MouseEvent) => {
+    e.stopPropagation();
+    setShowComments(prev => ({
+      ...prev,
+      [postId]: !prev[postId]
+    }));
+  };
+
+  const handleAddComment = (postId: number, e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newComment.trim()) return;
+
+    const newCommentObj: Comment = {
+      id: Date.now(),
+      text: newComment,
+      author: "User", // You can replace this with actual user data
+      timestamp: new Date().toLocaleString()
+    };
+
+    setPosts(prevPosts =>
+      prevPosts.map(post =>
+        post.id === postId
+          ? { ...post, comments: [...post.comments, newCommentObj] }
+          : post
+      )
+    );
+
+    // Optional: Send to backend
+    fetch(`http://localhost:1337/api/posts/${postId}/comments`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(newCommentObj),
+    }).catch((error) => console.error("Error adding comment:", error));
+
+    setNewComment("");
+  };
+
+  const toggleExpandPost = (post: Post) => {
     if (expandedPost?.id === post.id) {
       setExpandedPost(null);
     } else {
@@ -131,7 +202,7 @@ export default function Gallery() {
     }
   };
 
-  const openPhotoModal = (post: any, e: React.MouseEvent) => {
+  const openPhotoModal = (post: Post, e: React.MouseEvent) => {
     e.stopPropagation();
     setExpandedPost(post);
     setShowPhotoModal(true);
@@ -144,7 +215,7 @@ export default function Gallery() {
           <div
             key={post.id}
             className={`bg-white rounded-lg shadow-md p-4 flex flex-col transition-all ${
-              expandedPost?.id === post.id ? "h-auto" : "h-64"
+              expandedPost?.id === post.id ? "h-auto" : "min-h-[16rem]"
             }`}
             onClick={() => toggleExpandPost(post)}
           >
@@ -175,17 +246,58 @@ export default function Gallery() {
               <p className="text-sm text-gray-700 mt-2">{post.description}</p>
             )}
 
-            {/* Likes */}
-            <div
-              onClick={(e) => {
-                e.stopPropagation();
-                handleLike(post.id);
-              }}
-              className="mt-auto flex items-center gap-2 text-red-500 cursor-pointer"
-            >
-              <FaHeart />
-              <span>{post.likes} Likes</span>
+            {/* Likes and Comments */}
+            <div className="mt-auto flex items-center justify-between">
+              <div
+                onClick={(e) => {
+                  e.stopPropagation();
+                  handleLike(post.id);
+                }}
+                className="flex items-center gap-2 text-red-500 cursor-pointer"
+              >
+                <FaHeart />
+                <span>{post.likes} Likes</span>
+              </div>
+              
+              <div
+                onClick={(e) => toggleComments(post.id, e)}
+                className="flex items-center gap-2 text-blue-500 cursor-pointer"
+              >
+                <FaComment />
+                <span>{post.comments.length} Comments</span>
+              </div>
             </div>
+
+            {/* Comments Section */}
+            {showComments[post.id] && (
+              <div className="mt-4 p-2 bg-gray-50 rounded-lg" onClick={e => e.stopPropagation()}>
+                {/* Comment List */}
+                <div className="max-h-40 overflow-y-auto mb-2">
+                  {post.comments.map((comment) => (
+                    <div key={comment.id} className="mb-2 p-2 bg-white rounded">
+                      <p className="text-sm">{comment.text}</p>
+                      <div className="text-xs text-gray-500 mt-1">
+                        {comment.author} • {comment.timestamp}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+
+                {/* Add Comment Form */}
+                <form onSubmit={(e) => handleAddComment(post.id, e)} className="flex gap-2">
+                  <Input
+                    type="text"
+                    value={newComment}
+                    onChange={(e) => setNewComment(e.target.value)}
+                    placeholder="Add a comment..."
+                    className="flex-1"
+                  />
+                  <Button type="submit" size="sm">
+                    Post
+                  </Button>
+                </form>
+              </div>
+            )}
           </div>
         ))}
       </div>
@@ -194,7 +306,6 @@ export default function Gallery() {
       {showPhotoModal && expandedPost && (
         <div className="fixed inset-0 bg-black bg-opacity-90 z-50 flex items-center justify-center p-4">
           <div className="w-full max-w-4xl">
-            {/* Close button */}
             <button
               className="absolute top-4 right-4 text-white text-2xl hover:text-gray-300"
               onClick={() => setShowPhotoModal(false)}
@@ -202,10 +313,9 @@ export default function Gallery() {
               <FaTimes />
             </button>
 
-            {/* Photo Carousel */}
             <Carousel className="w-full">
               <CarouselContent>
-                {expandedPost.photos.map((photo: any, index: number) => (
+                {expandedPost.photos.map((photo, index) => (
                   <CarouselItem key={index}>
                     <div className="relative aspect-video">
                       <img
@@ -221,7 +331,6 @@ export default function Gallery() {
               <CarouselNext className="text-white" />
             </Carousel>
 
-            {/* Photo Info */}
             <div className="text-white mt-4">
               <h2 className="text-xl font-bold">{expandedPost.title}</h2>
               <p className="text-sm">
@@ -233,4 +342,4 @@ export default function Gallery() {
       )}
     </>
   );
-}
+} 

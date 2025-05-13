@@ -77,6 +77,35 @@
     background-attachment: fixed;
     background-position: center;
   }
+  .gallery-container {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 20px;
+    padding: 20px;
+  }
+  
+  .post-card {
+    width: 300px;
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    padding: 15px;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    background-color: #fff;
+  }
+  
+  .photos-container {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin-top: 10px;
+  }
+  
+  .photo {
+    width: 100%;
+    border-radius: 4px;
+    object-fit: cover;
+  }
+  
 
   .gallery-container {
     padding: 20px;
