@@ -28,7 +28,7 @@
     "leaflet-control-geocoder": "^3.1.0",
     "lucide-react": "^0.474.0",
     "mapbox-gl": "^3.9.3",
-    "next": "15.1.6",
+    "next": "15.2.2",
     "react": "^19.0.0",
     "react-country-state-city": "^1.1.10",
     "react-dom": "^19.0.0",
